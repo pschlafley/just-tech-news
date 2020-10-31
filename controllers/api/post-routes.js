@@ -4,9 +4,7 @@ const sequelize = require('../../config/connection');
 
 // get all users
 router.get('/', (req, res) => {
-    console.log('====================================');
     Post.findAll({
-        order: [['created_at', 'DESC']],
         attributes: [
           'id',
           'post_url',
@@ -29,8 +27,12 @@ router.get('/', (req, res) => {
             attributes: ['username']
           }
         ]
-       })
-    .then(dbPostData => res.json(dbPostData))
+    })
+    .then(dbPostData => {
+        // console.log(dbPostData[0])
+        const posts = dbPostData.map(post => post.get({ plain: true }));
+        res.render('homepage', { posts });
+    })
     .catch(err => {
         console.log(err);
         res.status(500).json(err);
