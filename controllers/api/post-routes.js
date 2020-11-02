@@ -1,10 +1,13 @@
 const router = require('express').Router();
 const { Post, User, Vote, Comment } = require('../../models');
 const sequelize = require('../../config/connection');
+const { response } = require('express');
 
 // get all users
 router.get('/', (req, res) => {
+    console.log('====================================');
     Post.findAll({
+        order: [['created_at', 'DESC']],
         attributes: [
           'id',
           'post_url',
@@ -27,12 +30,8 @@ router.get('/', (req, res) => {
             attributes: ['username']
           }
         ]
-    })
-    .then(dbPostData => {
-        // console.log(dbPostData[0])
-        const posts = dbPostData.map(post => post.get({ plain: true }));
-        res.render('homepage', { posts });
-    })
+       })
+    .then(dbPostData => res.json(dbPostData))
     .catch(err => {
         console.log(err);
         res.status(500).json(err);
@@ -93,9 +92,14 @@ router.post('/', (req, res) => {
 });
 
 router.put('/upvote', (req, res) => {
-    Post.upvote(req.body, { Vote })
-    .then(dbPostData => res.json(dbPostData))
-    .catch(err => res.json(err));
+    if (req.session) {
+       Post.upvote({ ...req.body, user_id: req.session.user_id }, { Vote, Comment, User })
+       .then(updatedVoteData => res.json(updatedVoteData))
+       .catch(err => {
+           console.log(err);
+           res.status(500).json(err);
+       })
+    }
 });
 
 router.put('/:id', (req, res) => {
